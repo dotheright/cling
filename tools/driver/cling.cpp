@@ -27,91 +27,102 @@
 #include <crtdbg.h>
 #endif
 
-int main( int argc, char **argv ) {
+int main( int argc, char **argv ) 
+{
 
-  llvm::llvm_shutdown_obj shutdownTrigger;
-
-  llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);
-  llvm::PrettyStackTraceProgram X(argc, argv);
+	llvm::llvm_shutdown_obj shutdownTrigger;
+	llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);
+	llvm::PrettyStackTraceProgram X(argc, argv);
 
 #if defined(_WIN32) && defined(_MSC_VER)
-  // Suppress error dialogs to avoid hangs on build nodes.
-  // One can use an environment variable (Cling_GuiOnAssert) to enable
-  // the error dialogs.
-  const char *EnablePopups = getenv("Cling_GuiOnAssert");
-  if (EnablePopups == nullptr || EnablePopups[0] == '0') {
-    ::_set_error_mode(_OUT_TO_STDERR);
-    _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG);
-    _CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
-    _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG);
-    _CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
-    _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG);
-    _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
-  }
+	// Suppress error dialogs to avoid hangs on build nodes.
+	// One can use an environment variable (Cling_GuiOnAssert) to enable
+	// the error dialogs.
+	const char *EnablePopups = getenv("Cling_GuiOnAssert");
+
+	if (EnablePopups == nullptr || EnablePopups[0] == '0') 
+	{
+		::_set_error_mode(_OUT_TO_STDERR);
+		_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG);
+		_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
+		_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG);
+		_CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
+		_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG);
+		_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+	}
 #endif
 
-  // Set up the interpreter
-  cling::Interpreter interp(argc, argv);
-  if (interp.getOptions().Help) {
-    return 0;
-  }
+	// Set up the interpreter
+	cling::Interpreter interp(argc, argv);
+	if (interp.getOptions().Help) 
+	{
+		return 0;
+	}
 
-  clang::CompilerInstance* CI = interp.getCI();
-  interp.AddIncludePath(".");
+	clang::CompilerInstance* CI = interp.getCI();
+	interp.AddIncludePath(".");
 
-  for (size_t I = 0, N = interp.getOptions().LibsToLoad.size(); I < N; ++I) {
-    interp.loadFile(interp.getOptions().LibsToLoad[I]);
-  }
+	for (size_t I = 0, N = interp.getOptions().LibsToLoad.size(); I < N; ++I) {
+		interp.loadFile(interp.getOptions().LibsToLoad[I]);
+	}
 
 
-  // Interactive means no input (or one input that's "-")
-  std::vector<std::string>& Inputs = interp.getOptions().Inputs;
-  bool Interactive = Inputs.empty() || (Inputs.size() == 1
-                                        && Inputs[0] == "-");
+	// Interactive means no input (or one input that's "-")
+	std::vector<std::string>& Inputs = interp.getOptions().Inputs;
+	bool Int:eractive = Inputs.empty() || (Inputs.size() == 1
+			&& Inputs[0] == "-");
 
-  cling::UserInterface ui(interp);
-  // If we are not interactive we're supposed to parse files
-  if (!Interactive) {
-    for (size_t I = 0, N = Inputs.size(); I < N; ++I) {
-      std::string cmd;
-      cling::Interpreter::CompilationResult compRes;
-      if (!interp.lookupFileOrLibrary(Inputs[I]).empty()) {
-        std::ifstream infile(interp.lookupFileOrLibrary(Inputs[I]));
-        std::string line;
-        std::getline(infile, line);
-        if (line[0] == '#' && line[1] == '!') {
-          // TODO: Check whether the filename specified after #! is the current
-          // executable.
-          while(std::getline(infile, line)) {
-            ui.getMetaProcessor()->process(line.c_str(), compRes, 0);
-          }
-          continue;
-        }
-        else
-          cmd += ".x ";
-      }
-      cmd += Inputs[I];
-      ui.getMetaProcessor()->process(cmd.c_str(), compRes, 0);
-    }
-  }
-  else {
-    ui.runInteractively(interp.getOptions().NoLogo);
-  }
+	cling::UserInterface ui(interp);
+	// If we are not interactive we're supposed to parse files
+	if (!Interactive)
+	{
+		for(size_t I = 0, N = Inputs.size(); I < N; ++I)
+		{
+			std::string cmd;
+			cling::Interpreter::CompilationResult compRes;
+			if (!interp.lookupFileOrLibrary(Inputs[I]).empty()) 
+			{
+				std::ifstream infile(interp.lookupFileOrLibrary(Inputs[I]));
+				std::string line;
+				std::getline(infile, line);
+				if (line[0] == '#' && line[1] == '!') 
+				{
+					// TODO: Check whether the filename specified after #! is the current
+					// executable.
+					while(std::getline(infile, line)) 
+					{
+						ui.getMetaProcessor()->process(line.c_str(), compRes, 0);
+					}
+					continue;
+				}
+				else
+				{
+					cmd += ".x ";
+				}
+			}
+			cmd += Inputs[I];
+			ui.getMetaProcessor()->process(cmd.c_str(), compRes, 0);
+		}
+	}
+	else
+	{
+		ui.runInteractively(interp.getOptions().NoLogo);
+	}
 
-  bool ret = CI->getDiagnostics().getClient()->getNumErrors();
+	bool ret = CI->getDiagnostics().getClient()->getNumErrors();
 
-  // if we are running with -verify a reported has to be returned as unsuccess.
-  // This is relevant especially for the test suite.
-  if (CI->getDiagnosticOpts().VerifyDiagnostics) {
-    // If there was an error that came from the verifier we must return 1 as
-    // an exit code for the process. This will make the test fail as expected.
-    clang::DiagnosticConsumer* client = CI->getDiagnostics().getClient();
-    client->EndSourceFile();
-    ret = client->getNumErrors();
+	// if we are running with -verify a reported has to be returned as unsuccess.
+	// This is relevant especially for the test suite.
+	if (CI->getDiagnosticOpts().VerifyDiagnostics) {
+		// If there was an error that came from the verifier we must return 1 as
+		// an exit code for the process. This will make the test fail as expected.
+		clang::DiagnosticConsumer* client = CI->getDiagnostics().getClient();
+		client->EndSourceFile();
+		ret = client->getNumErrors();
 
-    // The interpreter expects BeginSourceFile/EndSourceFiles to be balanced.
-    client->BeginSourceFile(CI->getLangOpts(), &CI->getPreprocessor());
-  }
+		// The interpreter expects BeginSourceFile/EndSourceFiles to be balanced.
+		client->BeginSourceFile(CI->getLangOpts(), &CI->getPreprocessor());
+	}
 
-  return ret;
+	return ret;
 }
